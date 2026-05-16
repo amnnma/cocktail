@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cocktail Radar — Band Music Board</title>
+<meta name="description" content="Cocktail Band YouTube view count tracker">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://img.youtube.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+:root {
+  --bg:#0a0a0c; --bg2:#111114; --bg3:#18181d; --bg4:#222228;
+  --border:#2a2a32; --border2:#38383f;
+  --text:#e8e8f0; --muted:#5a5a6e; --muted2:#3a3a4a;
+  --accent:#b8ff00; --accent-dim:rgba(184,255,0,.1);
+  --cyan:#00d4ff; --red:#ff4d6d;
+  --gold:#ffd060; --silver:#a8b8cc; --bronze:#c8804a;
+  --font-th:'Noto Sans Thai',sans-serif;
+  --font-mono:'DM Mono',monospace;
+  --r:6px; --rl:10px; --ease:.15s ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font-th);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
+.container{max-width:960px;margin:0 auto;padding:0 20px;}
+
+/* HEADER */
+header{border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,10,12,.92);backdrop-filter:blur(12px);z-index:100;}
+.header-inner{display:flex;align-items:center;justify-content:space-between;height:56px;}
+.logo{font-family:var(--font-mono);font-size:14px;font-weight:500;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;text-decoration:none;}
+.logo em{color:var(--muted);font-style:normal;}
+nav{display:flex;gap:1.5rem;}
+nav a{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color var(--ease);}
+nav a:hover,nav a.active{color:var(--text);}
+
+/* HERO */
+.hero{padding:2rem 0 1.5rem;}
+.hero-title{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem;}
+.hero-title span{color:var(--accent);}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.5rem;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;}
+.stat-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.stat-val{font-family:var(--font-mono);font-size:22px;font-weight:500;color:var(--text);line-height:1;}
+.stat-val.hi{color:var(--accent);}
+
+/* CONTROLS */
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1rem;}
+.pill-group{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.pill{padding:7px 14px;font-family:var(--font-mono);font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:none;border:none;cursor:pointer;transition:all var(--ease);white-space:nowrap;}
+.pill:hover{color:var(--text);background:var(--bg3);}
+.pill.active{color:var(--accent);background:var(--accent-dim);}
+.search-wrap{flex:1;min-width:180px;position:relative;}
+.search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;pointer-events:none;}
+.search-box{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:7px 12px 7px 32px;font-family:var(--font-th);font-size:13px;color:var(--text);outline:none;transition:border-color var(--ease);}
+.search-box::placeholder{color:var(--muted);}
+.search-box:focus{border-color:var(--accent);}
+.view-btns{display:flex;gap:4px;}
+.view-btn{width:34px;height:34px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:16px;transition:all var(--ease);}
+.view-btn:hover,.view-btn.active{background:var(--bg4);color:var(--text);}
+.refresh-btn{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:0 12px;height:34px;font-family:var(--font-mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all var(--ease);}
+.refresh-btn:hover{color:var(--accent);border-color:var(--accent);}
+.refresh-btn i{font-size:14px;}
+.refresh-btn.spinning i{animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TABLE HEADER */
+.table-header{display:grid;grid-template-columns:48px 80px 1fr 140px;padding:8px 12px;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);background:var(--bg2);border-radius:var(--rl) var(--rl) 0 0;}
+
+/* LIST */
+.song-list{background:var(--bg2);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--rl) var(--rl);overflow:hidden;}
+.song-item{border-bottom:1px solid var(--border);overflow:hidden;}
+.song-item:last-child{border-bottom:none;}
+.song-row{width:100%;display:grid;grid-template-columns:48px 80px 1fr 140px;align-items:center;padding:10px 12px;border:0;background:none;text-decoration:none;color:inherit;text-align:left;font:inherit;cursor:pointer;transition:background var(--ease);}
+.song-row:hover,.song-item.open .song-row{background:var(--bg3);}
+.song-row:focus-visible{outline:1px solid var(--accent);outline-offset:-1px;}
+.rank-num{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--muted);text-align:center;}
+.rank-num.r1{color:var(--gold);}.rank-num.r2{color:var(--silver);}.rank-num.r3{color:var(--bronze);}
+.thumb-cell img{width:68px;height:38px;object-fit:cover;border-radius:4px;display:block;background:var(--bg4);}
+.song-info{padding:0 14px;overflow:hidden;}
+.song-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}
+.song-date{font-family:var(--font-mono);font-size:10px;color:var(--muted);}
+.views-cell{display:flex;flex-direction:column;gap:5px;min-width:0;}
+.views-head{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.views-num{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--text);}
+.views-num.top{color:var(--accent);}
+.row-caret{color:var(--muted);font-size:15px;transition:transform var(--ease),color var(--ease);}
+.song-item.open .row-caret{color:var(--accent);transform:rotate(180deg);}
+.bar-bg{width:100%;height:2px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.bar-fill{height:2px;border-radius:2px;background:linear-gradient(90deg,var(--cyan),var(--accent));}
+.badge-err{font-family:var(--font-mono);font-size:10px;color:var(--red);background:rgba(255,77,109,.1);border-radius:3px;padding:2px 8px;text-transform:uppercase;letter-spacing:.06em;display:inline-block;}
+.song-detail{display:none;position:relative;padding:14px 12px 16px 140px;background-image:linear-gradient(90deg,rgba(10,10,12,.96),rgba(10,10,12,.84) 54%,rgba(10,10,12,.68)),var(--detail-thumb);background-size:cover;background-position:center;border-top:1px solid var(--border);}
+.song-item.open .song-detail{display:block;animation:fadeUp .16s ease both;}
+.detail-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;position:relative;}
+.detail-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;flex:1;}
+.detail-metric span{display:block;font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.detail-metric strong{display:block;font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.detail-metric strong.up{color:var(--accent);}
+.detail-link{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:var(--r);padding:6px 10px;color:var(--muted);text-decoration:none;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;transition:all var(--ease);}
+.detail-link:hover{color:var(--text);border-color:var(--border2);background:var(--bg3);}
+.chart-panel{position:relative;background:rgba(10,10,12,.72);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:10px 12px 9px;backdrop-filter:blur(10px);}
+.chart-meta{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px;font-family:var(--font-mono);}
+.chart-meta span{font-size:10px;color:var(--muted);}
+.chart-meta strong{font-size:12px;font-weight:500;color:var(--accent);}
+.chart-plot{display:grid;grid-template-columns:54px minmax(0,1fr);gap:8px;}
+.chart-axis-y{height:132px;display:flex;flex-direction:column;justify-content:space-between;text-align:right;font-family:var(--font-mono);font-size:10px;color:var(--muted);}
+.chart-main{min-width:0;}
+.chart-wrap{height:132px;position:relative;}
+.line-chart{display:block;width:100%;height:132px;overflow:visible;}
+.chart-grid{stroke:rgba(255,255,255,.16);stroke-width:1;opacity:.9;}
+.chart-area{fill:rgba(184,255,0,.08);}
+.chart-line{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+.chart-start{fill:var(--cyan);}
+.chart-dot{fill:var(--accent);}
+.chart-select-line{stroke:rgba(255,255,255,.4);stroke-width:1;stroke-dasharray:3 4;}
+.chart-click{fill:transparent;cursor:crosshair;}
+.chart-axis-x{display:flex;justify-content:space-between;margin-top:5px;font-family:var(--font-mono);font-size:10px;color:var(--muted);}
+.chart-scrub{width:100%;margin-top:7px;accent-color:var(--accent);}
+.chart-empty{display:flex;align-items:center;justify-content:center;height:132px;border:1px dashed var(--border);border-radius:var(--r);font-size:12px;color:var(--muted);}
+
+/* GRID */
+.grid-view{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;}
+.grid-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;text-decoration:none;display:block;transition:border-color var(--ease),transform var(--ease);}
+.grid-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.grid-thumb{position:relative;padding-top:56.25%;background:var(--bg3);overflow:hidden;}
+.grid-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.grid-rank{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.75);border-radius:3px;padding:2px 7px;font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--text);}
+.grid-rank.r1{color:var(--gold);}.grid-rank.r2{color:var(--silver);}.grid-rank.r3{color:var(--bronze);}
+.grid-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0);transition:background var(--ease);}
+.grid-card:hover .grid-play{background:rgba(0,0,0,.4);}
+.grid-play i{color:#fff;font-size:28px;opacity:0;transition:opacity var(--ease);}
+.grid-card:hover .grid-play i{opacity:1;}
+.grid-body{padding:10px;}
+.grid-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;}
+.grid-views{font-family:var(--font-mono);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;}
+.grid-views .gv{color:var(--accent);font-weight:500;}
+
+/* STATE BOXES */
+.state-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:4rem 0;color:var(--muted);font-size:13px;}
+.spinner{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+.err-msg{color:var(--red);text-align:center;max-width:480px;}
+.err-msg h3{font-size:15px;margin-bottom:6px;}
+.err-msg p{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:4px;}
+.err-msg code{font-family:var(--font-mono);font-size:11px;background:var(--bg3);padding:2px 6px;border-radius:3px;}
+
+/* PAGER */
+.pager{display:flex;align-items:center;justify-content:space-between;margin-top:1rem;padding:.75rem 0;}
+.pager-info{font-family:var(--font-mono);font-size:11px;color:var(--muted);}
+.pager-btns{display:flex;gap:6px;}
+.pager-btn{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:7px 16px;font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;transition:all var(--ease);letter-spacing:.05em;}
+.pager-btn:hover:not(:disabled){background:var(--bg4);color:var(--text);border-color:var(--border2);}
+.pager-btn:disabled{opacity:.25;cursor:default;}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);margin-top:3rem;padding:1.5rem 0;}
+.footer-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;}
+.footer-logo{font-family:var(--font-mono);font-size:12px;color:var(--muted);letter-spacing:.08em;}
+.footer-logo strong{color:var(--accent);}
+.footer-note{font-size:11px;color:var(--muted2);}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.song-row,.grid-card{animation:fadeUp .18s ease both;}
+
+/* RESPONSIVE */
+@media(max-width:680px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .table-header,.song-row{grid-template-columns:36px 60px 1fr 80px;}
+  .thumb-cell img{width:52px;height:30px;}
+  .song-detail{padding-left:108px;}
+  .detail-top{flex-direction:column;}
+  .detail-metrics{width:100%;grid-template-columns:repeat(2,minmax(0,1fr));}
+  nav{display:none;}
+}
+@media(max-width:440px){
+  .table-header .th-vid,.song-row .thumb-cell{display:none;}
+  .table-header,.song-row{grid-template-columns:36px 1fr 80px;}
+  .song-detail{padding:0 12px 14px 48px;}
+  .chart-plot{grid-template-columns:42px minmax(0,1fr);}
+  .chart-axis-y,.chart-axis-x,.chart-meta span{font-size:9px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <a class="logo" href="#">Cocktail <em>Radar</em></a>
+      <nav>
+        <a href="#" class="active">Board</a>
+        <a href="#">Artists</a>
+        <a href="#">About</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="hero">
+    <div class="hero-title">youtube viewcount · cocktail band · <span id="last-updated">loading…</span></div>
+
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><div class="stat-label">Songs</div><div class="stat-val">—</div></div>
+      <div class="stat-card"><div class="stat-label">Total views</div><div class="stat-val">—</div></div>
+      <div class="stat-card"><div class="stat-label">Top song</div><div class="stat-val">—</div></div>
+      <div class="stat-card"><div class="stat-label">Errors</div><div class="stat-val">—</div></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="pill-group" id="sort-group">
+      <button class="pill active" data-sort="growth-desc">Growth</button>
+      <button class="pill" data-sort="total-desc">Total</button>
+    </div>
+    <div class="pill-group" id="range-group">
+      <button class="pill active" data-range="realtime">Realtime</button>
+      <button class="pill" data-range="daily">Daily</button>
+      <button class="pill" data-range="weekly">Weekly</button>
+      <button class="pill" data-range="monthly">Monthly</button>
+    </div>
+    <div class="pill-group" id="filter-group">
+      <button class="pill active" data-filter="all">All</button>
+      <button class="pill" data-filter="ok">Active</button>
+      <button class="pill" data-filter="error">Errors</button>
+    </div>
+    <div class="search-wrap">
+      <i class="ti ti-search"></i>
+      <input class="search-box" id="search" type="text" placeholder="Search songs…" oninput="render()">
+    </div>
+    <button class="refresh-btn" id="refresh-btn" onclick="loadData()">
+      <i class="ti ti-refresh"></i> Refresh
+    </button>
+    <div class="view-btns">
+      <button class="view-btn active" id="btn-list" onclick="setView('list')" title="List"><i class="ti ti-list"></i></button>
+      <button class="view-btn" id="btn-grid" onclick="setView('grid')" title="Grid"><i class="ti ti-layout-grid"></i></button>
+    </div>
+  </div>
+
+  <div class="table-header" id="table-header">
+    <div>#</div>
+    <div class="th-vid">Video</div>
+    <div>Song</div>
+    <div>Views</div>
+  </div>
+
+  <div id="main-view">
+    <div class="state-box"><div class="spinner"></div><span>Loading data…</span></div>
+  </div>
+
+  <div class="pager">
+    <div class="pager-info" id="pager-info"></div>
+    <div class="pager-btns">
+      <button class="pager-btn" id="prev-btn" onclick="changePage(-1)">← Prev</button>
+      <button class="pager-btn" id="next-btn" onclick="changePage(1)">Next →</button>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-logo"><strong>Cocktail Radar</strong> · Band Music Board</div>
+      <div class="footer-note">YouTube viewcount snapshots</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── CONFIG ───────────────────────────────────────────────────────
+const SHEET_ID  = '1B-gFyYDHaANoFpfblXs_v9u7_xKZkhV0KrYDcFrxai8';
+const SHEET_GID = '0';
+const VIDEO_NAME_OVERRIDES = {
+  '5legRVBfFxk': 'ไม่เป็นรอง'
+};
+
+// Google's gviz/tq endpoint via JSONP, no API key needed.
+// This keeps the page working when opened directly as a local file.
+const GVIZ_BASE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`;
+
+// ── STATE ────────────────────────────────────────────────────────
+let SONGS = [], filtered = [], page = 0;
+let currentView = 'list', currentSort = 'growth-desc', currentFilter = 'all', currentRange = 'realtime';
+const PAGE_SIZE = 20;
+let maxV = 1;
+let loadRun = 0;
+let expandedVid = null;
+let activePointByVid = {};
+const CHART = { width: 420, height: 132, padX: 8, top: 10, bottom: 10 };
+const RANGE_MS = {
+  daily: 24 * 60 * 60 * 1000,
+  weekly: 7 * 24 * 60 * 60 * 1000,
+  monthly: 30 * 24 * 60 * 60 * 1000
+};
+
+// ── FETCH via gviz/tq JSONP ─────────────────────────────────────
+async function loadData() {
+  const btn = document.getElementById('refresh-btn');
+  const run = ++loadRun;
+  btn.classList.add('spinning');
+  showLoading();
+
+  try {
+    const json = await loadSheetJson();
+    if (run !== loadRun) return;
+    if (json.status && json.status !== 'ok') {
+      const reason = json.errors?.map(e => e.detailed_message || e.message).filter(Boolean).join(', ');
+      throw new Error(reason || `Data source returned ${json.status}`);
+    }
+    SONGS = parseGviz(json);
+
+    if (!SONGS.length) throw new Error('Sheet returned 0 rows.');
+
+    maxV = Math.max(...SONGS.filter(r => r.views).map(r => r.views), 1);
+    renderStats();
+    render();
+    document.getElementById('last-updated').textContent =
+      'updated ' + new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+  } catch (err) {
+    showError(err.message);
+    document.getElementById('last-updated').textContent = 'error';
+  } finally {
+    if (run === loadRun) btn.classList.remove('spinning');
+  }
+}
+
+function loadSheetJson() {
+  return new Promise((resolve, reject) => {
+    const callbackName = `__cocktailSheet_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const tqx = encodeURIComponent(`out:json;responseHandler:${callbackName}`);
+    const src = `${GVIZ_BASE_URL}?tqx=${tqx}&gid=${encodeURIComponent(SHEET_GID)}&cacheBust=${Date.now()}`;
+    const script = document.createElement('script');
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Data request timed out.'));
+    }, 20000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[callbackName];
+      script.remove();
+    }
+
+    window[callbackName] = data => {
+      cleanup();
+      resolve(data);
+    };
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('Could not reach data source.'));
+    };
+    script.src = src;
+    document.head.appendChild(script);
+  });
+}
+
+// ── PARSE gviz JSON ──────────────────────────────────────────────
+// Columns: A=Date  B=Song Name  C=Video ID  D=Views
+function parseGviz(json) {
+  const rows = json?.table?.rows || [];
+  const parsed = rows.map(row => {
+    const cols = row.c || [];
+    const date = cols[0]?.f || cols[0]?.v || '';
+    const vid  = cols[2]?.v || '';
+    const name = VIDEO_NAME_OVERRIDES[vid] || cols[1]?.v || '';
+    const rawV = cols[3]?.v;
+    if (!name || !vid) return null;
+    const views = (rawV === null || rawV === undefined || rawV === 'Error')
+      ? null : Number(rawV);
+    return {
+      date: String(date).trim(),
+      name: String(name).trim(),
+      vid: String(vid).trim(),
+      views: Number.isFinite(views) ? views : null,
+      time: toSheetTime(cols[0]?.v, date)
+    };
+  }).filter(Boolean);
+  return dedupeSongs(parsed);
+}
+
+function songKey(name) {
+  return String(name).toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function dedupeSongs(rows) {
+  const byName = new Map();
+  rows.forEach(row => {
+    const key = songKey(row.name);
+    const current = byName.get(key);
+    if (!current || isBetterSongRow(row, current)) byName.set(key, row);
+  });
+  const byVideo = new Map();
+  byName.forEach(row => {
+    const current = byVideo.get(row.vid);
+    if (!current || isBetterSongRow(row, current)) byVideo.set(row.vid, row);
+  });
+  return [...byVideo.values()].map(row => {
+    const series = makeSeries(rows.filter(item => item.vid === row.vid));
+    const last = series[series.length - 1];
+    return {
+      ...row,
+      series,
+      latestTime: last?.time || row.time
+    };
+  });
+}
+
+function isBetterSongRow(next, current) {
+  if (next.views !== null && current.views === null) return true;
+  if (next.views === null && current.views !== null) return false;
+  if (next.views !== null && current.views !== null && next.views !== current.views) {
+    return next.views > current.views;
+  }
+  return next.time > current.time;
+}
+
+function makeSeries(rows) {
+  const byTime = new Map();
+  rows.forEach(row => {
+    if (row.views === null || !row.time) return;
+    const current = byTime.get(row.time);
+    if (!current || row.views > current.views) {
+      byTime.set(row.time, { date: row.date, time: row.time, views: row.views });
+    }
+  });
+  return [...byTime.values()].sort((a, b) => a.time - b.time);
+}
+
+function toSheetTime(value, fallback) {
+  if (typeof value === 'string') {
+    const m = value.match(/^Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)$/);
+    if (m) return new Date(+m[1], +m[2], +m[3], +m[4], +m[5], +m[6]).getTime();
+  }
+  const t = Date.parse(fallback);
+  return Number.isFinite(t) ? t : 0;
+}
+
+// ── UI STATES ────────────────────────────────────────────────────
+function showLoading() {
+  document.getElementById('main-view').innerHTML =
+    '<div class="state-box"><div class="spinner"></div><span>Loading data…</span></div>';
+}
+
+function showError(msg) {
+  document.getElementById('main-view').innerHTML = `
+    <div class="state-box">
+      <div class="err-msg">
+        <h3><i class="ti ti-alert-circle" style="vertical-align:-3px;margin-right:6px"></i>Could not load data</h3>
+        <p>Check the data source permission and try again.</p>
+        <p style="margin-top:8px;color:var(--muted2);font-size:11px">${msg}</p>
+        <button class="pager-btn" onclick="loadData()" style="margin-top:14px">↻ Try again</button>
+      </div>
+    </div>`;
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────
+function fmt(v) {
+  if (!v) return null;
+  if (v >= 1e8) return (v / 1e6).toFixed(0) + 'M';
+  if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return (v / 1e3).toFixed(0) + 'K';
+  return v.toLocaleString();
+}
+const thumb = vid => `https://img.youtube.com/vi/${vid}/mqdefault.jpg`;
+const thumbBg = vid => `https://img.youtube.com/vi/${encodeURIComponent(vid)}/hqdefault.jpg`;
+const youtube = vid => `https://www.youtube.com/watch?v=${encodeURIComponent(vid)}`;
+const rc    = n   => n === 1 ? 'r1' : n === 2 ? 'r2' : n === 3 ? 'r3' : '';
+
+function esc(value) {
+  const chars = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  return String(value ?? '').replace(/[&<>"']/g, ch => chars[ch]);
+}
+
+function fmtFull(v) {
+  return Number.isFinite(v) ? Math.round(v).toLocaleString() : '—';
+}
+
+function fmtDelta(v) {
+  if (!Number.isFinite(v)) return '—';
+  return `${v > 0 ? '+' : ''}${fmtFull(v)}`;
+}
+
+function shortDate(date) {
+  return date ? String(date).split(' ')[0] : '—';
+}
+
+function getRangeSeries(series, range = currentRange) {
+  const clean = (series || []).filter(point => point.views !== null && point.time);
+  if (clean.length <= 1) return clean;
+  if (range === 'realtime') return clean.slice(-2);
+
+  const ms = RANGE_MS[range] || RANGE_MS.daily;
+  const latest = clean[clean.length - 1];
+  const cutoff = latest.time - ms;
+  let startIndex = clean.findIndex(point => point.time >= cutoff);
+  if (startIndex === -1) startIndex = 0;
+  if (startIndex > 0) startIndex -= 1;
+  return clean.slice(startIndex);
+}
+
+function growthForRange(song) {
+  const series = getRangeSeries(song?.series || []);
+  if (series.length < 2) return 0;
+  return series[series.length - 1].views - series[0].views;
+}
+
+function rangeLabel(range = currentRange) {
+  if (range === 'realtime') return 'Realtime';
+  if (range === 'daily') return 'Daily';
+  if (range === 'weekly') return 'Weekly';
+  return 'Monthly';
+}
+
+function axisTicks(minV, maxV) {
+  if (!Number.isFinite(minV) || !Number.isFinite(maxV)) return ['—', '—', '—'];
+  if (minV === maxV) return [fmt(maxV), fmt(maxV), fmt(minV)];
+  return [fmt(maxV), fmt((minV + maxV) / 2), fmt(minV)];
+}
+
+function getSongByVid(vid) {
+  return SONGS.find(song => song.vid === vid);
+}
+
+function domId(value) {
+  return String(value).replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function activeIndexFor(song, series = getRangeSeries(song?.series || [])) {
+  const total = series.length || 0;
+  if (!total) return -1;
+  const stored = Number(activePointByVid[song.vid]);
+  if (Number.isFinite(stored)) return Math.max(0, Math.min(total - 1, Math.round(stored)));
+  return total - 1;
+}
+
+function setActivePoint(vid, index, redraw = false) {
+  const song = getSongByVid(vid);
+  const total = song?.series?.length || 0;
+  if (!total) return;
+  activePointByVid[vid] = Math.max(0, Math.min(total - 1, Math.round(Number(index) || 0)));
+  if (redraw) renderPage();
+  else updateActivePointDom(vid);
+}
+
+function chartPointCoords(point, index, series) {
+  const baseY = CHART.height - CHART.bottom;
+  const minV = Math.min(...series.map(p => p.views));
+  const maxV = Math.max(...series.map(p => p.views));
+  const minT = series[0].time;
+  const maxT = series[series.length - 1].time;
+  const x = maxT === minT
+    ? CHART.padX + (index / Math.max(series.length - 1, 1)) * (CHART.width - CHART.padX * 2)
+    : CHART.padX + ((point.time - minT) / (maxT - minT)) * (CHART.width - CHART.padX * 2);
+  const y = maxV === minV
+    ? CHART.top + (baseY - CHART.top) / 2
+    : CHART.top + (1 - ((point.views - minV) / (maxV - minV))) * (baseY - CHART.top);
+  return { x, y };
+}
+
+function updateActivePointDom(vid) {
+  const song = getSongByVid(vid);
+  const series = getRangeSeries(song?.series || []);
+  if (!series.length) return;
+  const index = activeIndexFor(song, series);
+  const point = series[index];
+  const id = domId(vid);
+  const pos = chartPointCoords(point, index, series);
+  const line = document.getElementById(`chart-select-${id}`);
+  const dot = document.getElementById(`chart-dot-${id}`);
+  const metaDate = document.getElementById(`chart-date-${id}`);
+  const metaViews = document.getElementById(`chart-views-${id}`);
+  const slider = document.getElementById(`chart-slider-${id}`);
+  if (!line || !dot) {
+    renderPage();
+    return;
+  }
+  line.setAttribute('x1', pos.x.toFixed(1));
+  line.setAttribute('x2', pos.x.toFixed(1));
+  dot.setAttribute('cx', pos.x.toFixed(1));
+  dot.setAttribute('cy', pos.y.toFixed(1));
+  if (metaDate) metaDate.textContent = point.date;
+  if (metaViews) metaViews.textContent = fmtFull(point.views);
+  if (slider) slider.value = index;
+}
+
+function selectChartPoint(evt, vid) {
+  const song = getSongByVid(vid);
+  const series = getRangeSeries(song?.series || []);
+  if (series.length < 2) return;
+  const rect = evt.currentTarget.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (evt.clientX - rect.left) / rect.width));
+  const minT = series[0].time;
+  const maxT = series[series.length - 1].time;
+  const target = minT + pct * (maxT - minT);
+  let best = 0, bestDist = Infinity;
+  series.forEach((point, i) => {
+    const dist = Math.abs(point.time - target);
+    if (dist < bestDist) {
+      best = i;
+      bestDist = dist;
+    }
+  });
+  setActivePoint(vid, best);
+}
+
+function sampleSeries(series, maxPoints = 90) {
+  if (!Array.isArray(series) || series.length <= maxPoints) return series || [];
+  const sampled = [], seen = new Set(), last = series.length - 1;
+  for (let i = 0; i < maxPoints; i++) {
+    const item = series[Math.round((i / (maxPoints - 1)) * last)];
+    if (!seen.has(item.time)) {
+      seen.add(item.time);
+      sampled.push(item);
+    }
+  }
+  return sampled;
+}
+
+function renderLineChart(series, vid, activeIndex) {
+  const points = sampleSeries(series || []);
+  if (points.length < 2) return '<div class="chart-empty">No trend yet</div>';
+
+  const { width, height, padX, top, bottom } = CHART;
+  const baseY = height - bottom;
+  const fullSeries = series || [];
+  const minV = Math.min(...fullSeries.map(p => p.views));
+  const maxV = Math.max(...fullSeries.map(p => p.views));
+  const minT = fullSeries[0].time;
+  const maxT = fullSeries[fullSeries.length - 1].time;
+  const x = (point, i) => {
+    if (maxT === minT) return padX + (i / Math.max(points.length - 1, 1)) * (width - padX * 2);
+    return padX + ((point.time - minT) / (maxT - minT)) * (width - padX * 2);
+  };
+  const y = views => maxV === minV
+    ? top + (baseY - top) / 2
+    : top + (1 - ((views - minV) / (maxV - minV))) * (baseY - top);
+  const coords = points.map((point, i) => ({ x: x(point, i), y: y(point.views) }));
+  const line = coords.map((point, i) => `${i ? 'L' : 'M'}${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' ');
+  const area = `${line} L${coords[coords.length - 1].x.toFixed(1)} ${baseY} L${coords[0].x.toFixed(1)} ${baseY} Z`;
+  const first = coords[0], last = coords[coords.length - 1];
+  const selected = fullSeries[Math.max(0, Math.min(fullSeries.length - 1, activeIndex))] || fullSeries[fullSeries.length - 1];
+  const selectedPos = chartPointCoords(selected, activeIndex, fullSeries);
+  const selectedX = selectedPos.x;
+  const selectedY = selectedPos.y;
+  const vidArg = esc(JSON.stringify(vid));
+  const id = domId(vid);
+
+  return `<svg class="line-chart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">
+    <path class="chart-grid" d="M${padX} ${top}H${width-padX} M${padX} ${(top+baseY)/2}H${width-padX} M${padX} ${baseY}H${width-padX}"></path>
+    <path class="chart-area" d="${area}"></path>
+    <path class="chart-line" d="${line}"></path>
+    <circle class="chart-start" cx="${first.x.toFixed(1)}" cy="${first.y.toFixed(1)}" r="3"></circle>
+    <circle class="chart-dot" cx="${last.x.toFixed(1)}" cy="${last.y.toFixed(1)}" r="3.5"></circle>
+    <line id="chart-select-${id}" class="chart-select-line" x1="${selectedX.toFixed(1)}" y1="${top}" x2="${selectedX.toFixed(1)}" y2="${baseY}"></line>
+    <circle id="chart-dot-${id}" class="chart-dot" cx="${selectedX.toFixed(1)}" cy="${selectedY.toFixed(1)}" r="4.5"></circle>
+    <rect class="chart-click" x="${padX}" y="${top}" width="${width - padX * 2}" height="${baseY - top}" onpointerdown='selectChartPoint(event, ${vidArg})' onpointermove='if(event.buttons) selectChartPoint(event, ${vidArg})'></rect>
+  </svg>`;
+}
+
+function renderSongDetail(r) {
+  const series = getRangeSeries(r.series || []);
+  const first = series[0];
+  const last = series[series.length - 1];
+  const activeIndex = activeIndexFor(r, series);
+  const selected = series[activeIndex] || last;
+  const growth = first && last ? last.views - first.views : NaN;
+  const range = first && last ? `${shortDate(first.date)} - ${shortDate(last.date)}` : '—';
+  const ticks = first && last ? axisTicks(Math.min(...series.map(p => p.views)), Math.max(...series.map(p => p.views))) : ['—', '—', '—'];
+  const action = esc(JSON.stringify(r.vid));
+  const id = domId(r.vid);
+
+  return `<div class="song-detail" id="detail-${esc(r.vid)}" style="--detail-thumb:url(${thumbBg(r.vid)})">
+    <div class="detail-top">
+      <div class="detail-metrics">
+        <div class="detail-metric"><span>${rangeLabel()}</span><strong>${esc(range)}</strong></div>
+        <div class="detail-metric"><span>Start</span><strong>${first ? fmtFull(first.views) : '—'}</strong></div>
+        <div class="detail-metric"><span>Latest</span><strong>${last ? fmtFull(last.views) : '—'}</strong></div>
+        <div class="detail-metric"><span>Growth</span><strong class="${growth > 0 ? 'up' : ''}">${fmtDelta(growth)}</strong></div>
+      </div>
+      <a class="detail-link" href="${youtube(r.vid)}" target="_blank" rel="noopener"><i class="ti ti-brand-youtube"></i>YouTube</a>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-meta">
+        <span id="chart-date-${id}">${selected ? esc(selected.date) : '—'}</span>
+        <strong id="chart-views-${id}">${selected ? fmtFull(selected.views) : '—'}</strong>
+      </div>
+      <div class="chart-plot">
+        <div class="chart-axis-y"><span>${ticks[0]}</span><span>${ticks[1]}</span><span>${ticks[2]}</span></div>
+        <div class="chart-main">
+          <div class="chart-wrap">${renderLineChart(series, r.vid, activeIndex)}</div>
+          <div class="chart-axis-x"><span>${first ? esc(shortDate(first.date)) : '—'}</span><span>${last ? esc(shortDate(last.date)) : '—'}</span></div>
+          ${series.length > 1 ? `<input id="chart-slider-${id}" class="chart-scrub" type="range" min="0" max="${series.length - 1}" value="${Math.max(0, activeIndex)}" oninput='setActivePoint(${action}, this.value)'>` : ''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderSongRow(r, rank, i) {
+  const barW = r.views ? Math.round((r.views / maxV) * 100) : 0;
+  const open = expandedVid === r.vid;
+  const action = esc(JSON.stringify(r.vid));
+  return `<div class="song-item${open ? ' open' : ''}">
+    <button class="song-row" type="button" onclick='toggleSong(${action})' aria-expanded="${open}" aria-controls="detail-${esc(r.vid)}" style="animation-delay:${i*16}ms">
+      <div class="rank-num ${rc(rank)}">${rank}</div>
+      <div class="thumb-cell">
+        <img src="${thumb(r.vid)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+      </div>
+      <div class="song-info">
+        <div class="song-name">${esc(r.name)}</div>
+        <div class="song-date">${esc(r.date)}</div>
+      </div>
+      <div class="views-cell">
+        <div class="views-head">
+          ${r.views ? `<div class="views-num${rank<=3?' top':''}">${fmt(r.views)}</div>` : `<span class="badge-err">Error</span>`}
+          <i class="ti ti-chevron-down row-caret"></i>
+        </div>
+        ${r.views ? `<div class="bar-bg"><div class="bar-fill" style="width:${barW}%"></div></div>` : ''}
+      </div>
+    </button>
+    ${open ? renderSongDetail(r) : ''}
+  </div>`;
+}
+
+// ── STATS ────────────────────────────────────────────────────────
+function renderStats() {
+  const wv    = SONGS.filter(r => r.views);
+  const total = wv.reduce((s, r) => s + r.views, 0);
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Songs</div><div class="stat-val">${SONGS.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Total views</div><div class="stat-val hi">${fmt(total)}</div></div>
+    <div class="stat-card"><div class="stat-label">Top song</div><div class="stat-val">${fmt(maxV)}</div></div>
+    <div class="stat-card"><div class="stat-label">Errors</div><div class="stat-val">${SONGS.filter(r => !r.views).length}</div></div>`;
+}
+
+// ── FILTER + SORT ────────────────────────────────────────────────
+function getFiltered() {
+  const q = document.getElementById('search').value.toLowerCase();
+  let data = SONGS.filter(r => {
+    if (currentFilter === 'ok'    && !r.views) return false;
+    if (currentFilter === 'error' &&  r.views) return false;
+    if (q && !r.name.toLowerCase().includes(q) && !r.vid.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if      (currentSort === 'growth-desc') data.sort((a,b) => growthForRange(b)-growthForRange(a));
+  else if (currentSort === 'total-desc')  data.sort((a,b) => (b.views||0)-(a.views||0));
+  return data;
+}
+
+// ── RENDER ───────────────────────────────────────────────────────
+function render() { expandedVid = null; page = 0; filtered = getFiltered(); renderPage(); }
+
+function toggleSong(vid) {
+  expandedVid = expandedVid === vid ? null : vid;
+  renderPage();
+}
+
+function renderPage() {
+  const start  = page * PAGE_SIZE;
+  const slice  = filtered.slice(start, start + PAGE_SIZE);
+  const header = document.getElementById('table-header');
+
+  if (currentView === 'list') {
+    header.style.display = 'grid';
+    document.getElementById('main-view').innerHTML =
+      `<div class="song-list">${slice.map((r, i) => {
+        const rank = start + i + 1;
+        return renderSongRow(r, rank, i);
+      }).join('')}</div>`;
+  } else {
+    header.style.display = 'none';
+    document.getElementById('main-view').innerHTML =
+      `<div class="grid-view">${slice.map((r, i) => {
+        const rank = start + i + 1;
+        return `<a class="grid-card" href="${youtube(r.vid)}" target="_blank" rel="noopener" style="animation-delay:${i*16}ms">
+          <div class="grid-thumb">
+            <img src="${thumb(r.vid)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+            <div class="grid-rank ${rc(rank)}">#${rank}</div>
+            <div class="grid-play"><i class="ti ti-player-play-filled"></i></div>
+          </div>
+          <div class="grid-body">
+            <div class="grid-name">${esc(r.name)}</div>
+            <div class="grid-views">
+              ${r.views
+                ? `<i class="ti ti-eye" style="font-size:12px"></i><span class="gv">${fmt(r.views)}</span>`
+                : `<span style="color:var(--red);font-size:11px">Error</span>`}
+            </div>
+          </div>
+        </a>`;
+      }).join('')}</div>`;
+  }
+
+  const total = filtered.length, pages = Math.ceil(total / PAGE_SIZE);
+  document.getElementById('pager-info').textContent =
+    total ? `${start+1}–${Math.min(start+PAGE_SIZE,total)} of ${total}` : '0 results';
+  document.getElementById('prev-btn').disabled = page === 0;
+  document.getElementById('next-btn').disabled = page >= pages - 1;
+}
+
+function changePage(d) {
+  page = Math.max(0, Math.min(page + d, Math.ceil(filtered.length / PAGE_SIZE) - 1));
+  expandedVid = null;
+  renderPage();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function setView(v) {
+  currentView = v;
+  document.getElementById('btn-list').classList.toggle('active', v === 'list');
+  document.getElementById('btn-grid').classList.toggle('active', v === 'grid');
+  renderPage();
+}
+
+// Pill handlers
+document.getElementById('sort-group').addEventListener('click', e => {
+  const btn = e.target.closest('.pill'); if (!btn) return;
+  document.querySelectorAll('#sort-group .pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active'); currentSort = btn.dataset.sort; render();
+});
+document.getElementById('filter-group').addEventListener('click', e => {
+  const btn = e.target.closest('.pill'); if (!btn) return;
+  document.querySelectorAll('#filter-group .pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active'); currentFilter = btn.dataset.filter; render();
+});
+document.getElementById('range-group').addEventListener('click', e => {
+  const btn = e.target.closest('.pill'); if (!btn) return;
+  document.querySelectorAll('#range-group .pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  currentRange = btn.dataset.range;
+  activePointByVid = {};
+  render();
+});
+
+// ── BOOT ─────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
